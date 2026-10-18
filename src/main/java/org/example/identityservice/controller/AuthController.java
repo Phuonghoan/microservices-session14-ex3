@@ -1,5 +1,6 @@
 package org.example.identityservice.controller;
 
+import org.example.identityservice.dto.TokenResponseDTO;
 import org.example.identityservice.entity.User;
 import org.example.identityservice.entity.RefreshToken;
 
@@ -66,7 +67,7 @@ public class AuthController {
     }
 
     // =====================================
-    // BÀI 2: TEST ACCESS TOKEN
+    // BÀI 2: TEST JWT
     // =====================================
 
     @GetMapping(
@@ -89,15 +90,15 @@ public class AuthController {
     }
 
     // =====================================
-    // BÀI MỚI: LOGIN TRẢ 2 TOKEN
+    // BÀI TRƯỚC: LOGIN TRẢ 2 TOKEN
     // =====================================
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
+    public ResponseEntity<TokenResponseDTO> login(
             @RequestBody LoginRequest request
     ) {
 
-        // 1. Xác thực username/password
+        // 1. Xác thực tài khoản
         User user = authService.authenticate(
                 request.username(),
                 request.password()
@@ -107,19 +108,36 @@ public class AuthController {
         String accessToken =
                 jwtUtil.generateAccessToken(user);
 
-        // 3. Tạo Refresh Token và lưu PostgreSQL
+        // 3. Tạo Refresh Token
         RefreshToken refreshToken =
                 refreshTokenService.createRefreshToken(
                         user.getId()
                 );
 
-        // 4. Trả về cả hai token
+        // 4. Trả hai token
         return ResponseEntity.ok(
-                new LoginResponse(
+                new TokenResponseDTO(
                         accessToken,
                         refreshToken.getToken()
                 )
         );
+    }
+
+    // =====================================
+    // BÀI MỚI: REFRESH TOKEN ROTATION
+    // =====================================
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponseDTO> refresh(
+            @RequestBody RefreshTokenRequest request
+    ) {
+
+        TokenResponseDTO response =
+                refreshTokenService.refreshToken(
+                        request.refreshToken()
+                );
+
+        return ResponseEntity.ok(response);
     }
 
     // =====================================
@@ -161,8 +179,8 @@ public class AuthController {
     ) {
     }
 
-    public record LoginResponse(
-            String accessToken,
+    // DTO nhận Refresh Token từ Client
+    public record RefreshTokenRequest(
             String refreshToken
     ) {
     }

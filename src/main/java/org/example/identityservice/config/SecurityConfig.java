@@ -62,6 +62,11 @@ public class SecurityConfig {
                                 "/api/products"
                         ).permitAll()
 
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/refresh"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 );
 
